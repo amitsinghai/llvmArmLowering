@@ -1,0 +1,3 @@
+copy or generate hello.ll file 
+cd to <llvm build dir>/bin
+./llc -segmented-stacks hello.ll -march=arm
