@@ -239,7 +239,10 @@ void ARMFrameLowering::emitPrologue(MachineFunction &MF) const {
     AddDefaultCC(AddDefaultPred(MIB));
 	   
   }
+ 
 
+   //BuildMI(MBB,MBBI, dl, TII.get(ARMISD::CALL)).addExternalSymbol("__morestack");
+  	
   // Move past area 2.
   if (GPRCS2Size > 0) MBBI++;
 
@@ -1448,75 +1451,21 @@ static const uint64_t kSplitStackAvailable = 256;
 
 void
 ARMFrameLowering::adjustForSegmentedStacks(MachineFunction &MF) const {
-	printf("calling adjustForSegmentedStacks ...........");
-	MachineBasicBlock &prologueMBB = MF.front();
-	MachineFrameInfo *MFI = MF.getFrameInfo();
-	const ARMBaseInstrInfo &TII =
-    *static_cast<const ARMBaseInstrInfo*>(MF.getTarget().getInstrInfo());
-	uint64_t StackSize;
-	unsigned TlsReg, TlsOffset;
-	DebugLoc DL;
-	const ARMSubtarget *ST = &MF.getTarget().getSubtarget<ARMSubtarget>();
+
 	
-	
-	MachineBasicBlock *allocMBB = MF.CreateMachineBasicBlock();
-	//MachineBasicBlock *checkMBB = MF.CreateMachineBasicBlock();
+	MachineBasicBlock &MBB = MF.front();
+	MachineBasicBlock::iterator MBBI = MBB.begin();
+	MachineFrameInfo  *MFI = MF.getFrameInfo();
 	ARMFunctionInfo *AFI = MF.getInfo<ARMFunctionInfo>();
-	
 	const ARMBaseRegisterInfo *RegInfo =
     static_cast<const ARMBaseRegisterInfo*>(MF.getTarget().getRegisterInfo());
+	const ARMBaseInstrInfo &TII =
+    *static_cast<const ARMBaseInstrInfo*>(MF.getTarget().getInstrInfo());
 	
-	
-	/*
-	for (MachineBasicBlock::livein_iterator i = prologueMBB.livein_begin(),
-         e = prologueMBB.livein_end(); i != e; i++) {
-		allocMBB->addLiveIn(*i);
-		//checkMBB->addLiveIn(*i);
+	{
+	    MachineInstrBuilder MIB =
+		BuildMI(MBB, MBBI, MBBI->getDebugLoc(), TII.get(ARM::BL)).addExternalSymbol("__morestack", 0);
 	}
 	 
-	
-	MF.push_front(allocMBB);
-	//MF.push_front(checkMBB);
-	*/
-	
-	//stack size and frame pointer 
-	StackSize = MFI->getStackSize();
-	unsigned FramePtr = RegInfo->getFrameRegister(MF);
-	
-	
-	bool CompareStackPointer = StackSize < kSplitStackAvailable;
-	
-	/*
-	MachineBasicBlock::iterator MBBI = MBB.begin();
-
-	assert(!AFI->isThumb1OnlyFunction() &&
-		   "This emitPrologue does not support Thumb1!");
-	bool isARM = !AFI->isThumbFunction();
-	unsigned VARegSaveSize = AFI->getVarArgsRegSaveSize();
-	unsigned NumBytes = MFI->getStackSize();
-	const std::vector<CalleeSavedInfo> &CSI = MFI->getCalleeSavedInfo();
-	DebugLoc dl = MBBI != MBB.end() ? MBBI->getDebugLoc() : DebugLoc();
-	*/
-	
-	
-	unsigned ADDriOpc = ARM::ADDri;
-	
-	BuildMI(allocMBB, DL, TII.get(ADDriOpc))
-	.addExternalSymbol("__morestack");
-	
-	allocMBB->addSuccessor(&prologueMBB);
-	
-	//checkMBB->addSuccessor(allocMBB);
-	//checkMBB->addSuccessor(&prologueMBB);
-	 
-	
-	//here need to emit code for stack size checking and switching stack
-	// problem is I dont know how to do it for ARM.
-	// its really a very tough thing to understand.
-	
-	
-	//it adds more stack to the prologue, morestack will be defined in rustrt.
-	// for now morestack implementation empty just "mov pc,lr"  
-
 }
 
